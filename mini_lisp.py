@@ -593,6 +593,8 @@ def eval_operator(op_name, children, env):
     if op_name == '+':
         # (+ EXP EXP+)
         # sum all
+        if len(vals) == 0:
+            raise SyntaxError("(+) can't be empty in this Mini-LISP subset")
         s = 0
         for v in vals:
             if not isinstance(v, int):
@@ -612,6 +614,8 @@ def eval_operator(op_name, children, env):
 
     if op_name == '*':
         # (* EXP EXP+)
+        if len(vals) == 0:
+            raise SyntaxError("(*) can't be empty in this Mini-LISP subset")
         product = 1
         for v in vals:
             if not isinstance(v, int):
@@ -715,28 +719,40 @@ def run_mini_lisp(code):
     Main entry point to run a string of Mini-LISP code.
     Returns None; prints results of print statements to stdout.
     """
-    # 1. Tokenize
-    tokens = tokenize(code)
+    try:
+        # 1. Tokenize
+        tokens = tokenize(code)
 
-    # 2. Parse -> list of AST statements
-    parser = Parser(tokens)
-    program_ast = parser.parse_program()
+        # 2. Parse -> list of AST statements
+        parser = Parser(tokens)
+        program_ast = parser.parse_program()
 
-    # 3. Evaluate each statement
-    env = Environment()
-    for stmt in program_ast:
-        eval_ast(stmt, env)
+        # 3. Evaluate each statement
+        env = Environment()
+        for stmt in program_ast:
+            eval_ast(stmt, env)
+    # except SyntaxError:
+    #     print("syntax error")
+    except (SyntaxError, ValueError, TypeError, NameError) as e:
+        print("syntax error")
 
 if __name__ == "__main__":
     import sys
     if len(sys.argv) > 1:
-        with open(sys.argv[1], 'r') as file:
-            sample_program = file.read()
+        try:
+            with open(sys.argv[1], 'r') as file:
+                sample_program = file.read()
+            run_mini_lisp(sample_program)
+        except SyntaxError:
+            print("syntax error")
     else:
         sample_program = r"""
           (print-num((fun (x) (+ x 1)) 3))
         """
-    run_mini_lisp(sample_program)
+        try:
+            run_mini_lisp(sample_program)
+        except SyntaxError:
+            print("syntax error")
 # Example usage (uncomment to try):
 # if __name__ == "__main__":
 #     sample_program = r"""
